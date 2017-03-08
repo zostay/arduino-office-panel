@@ -3,12 +3,8 @@ use v6;
 
 use RPi::Wiring::Pi;
 
-constant QUIETUDE_DUR  = 30;
-constant BLINK_FREQ    = 0.5;
-
-constant OFF_AIR       = 0;
-constant ON_AIR        = 1;
-constant QUIETUDE      = 2;
+constant QUIETUDE_DURATION = 30;
+constant BLINK_FREQ        = 0.5;
 
 class Pin {
     has $.pin is required;
@@ -16,12 +12,29 @@ class Pin {
     method read() { digitalRead($.pin) }
     method write($state) { digitalWrite($.pin, $state) }
 
-    method events() {
-        supply {
-            wiringPiISR($.pin, INT_EDGE_BOTH, sub {
-                emit self.read;
-            });
+    method toggle() {
+        if digitalRead($.pin) == HIGH {
+            digitalWrite($.pin, LOW);
         }
+        else {
+            digitalWrite($.pin, HIGH);
+        }
+    }
+
+    method events() {
+        Supply.interval(0.01).map({
+            state $prev;
+            my $state = self.read;
+
+            LEAVE { $prev = $state };
+
+            if !$prev.defined || $prev != $state {
+                $state;
+            }
+            else {
+                Mu
+            }
+        }).grep({ .defined });
     }
 }
 
@@ -35,40 +48,40 @@ class LightPanel {
     method is-quiet  { $.signal-state == Quietude }
 
     method go-on-air {
-        return if not $end-quietude and $.is-on-air;
-        $.signal-state = OnAir;
-        send-state-update();
+        return if $.is-on-air;
+        $!signal-state = OnAir;
+        self.send-state-update();
     }
 
     method end-quietude {
         return unless $.is-quiet;
         if $.is-on-air {
-            $.signal-state = OnAir;
+            $!signal-state = OnAir;
         }
         else {
-            $.signal-state = OffAir;
+            $!signal-state = OffAir;
         }
-        send-state-update();
+        self.send-state-update();
     }
 
     method go-off-air {
-        $.signal-state = OffAir;
-        send-state-update();
+        $!signal-state = OffAir;
+        self.send-state-update();
     }
 
     method go-quiet {
         return unless $.is-on-air;
-        $.signal-state = Quietude;
-        send-state-update();
+        $!signal-state = Quietude;
+        self.send-state-update();
     }
 
     method send-state-update() {
-        return dry-run-state-update() if $dry-run;
+        return self.dry-run-state-update() if $.dry-run;
         ...
     }
 
     method dry-run-state-update() {
-        say "Sending state: $signal_state";
+        say "Sending state: $.signal-state";
     }
 }
 
@@ -96,50 +109,19 @@ class ControlPanel {
     method quiet-events() { $.quiet-button.events.map(* == HIGH) }
 }
 
-sub update_signal_state(:$force, :$dry-run) {
-    my $old_state = $signal_state;
+class Blinker {
+    has Pin $.light is required;
+    has Tap $.blinky-blinky;
 
-    if $on_air_state && $on_air_count >= 2 {
-        if $quiet_state && $quiet_count >= 2 {
-            $signal_state = QUIETUDE;
-        }
-        else {
-            $signal_state = ON_AIR;
-        }
-    }
-    elsif $on_air_count >= 2 {
-        $signal_state = OFF_AIR;
+    method start {
+        $!blinky-blinky = Supply.interval(0.5).tap({ $.light.toggle });
     }
 
-    if $force || ($old_state != QUIETUDE && $old_state != $signal_state) {
-        if $signal_state == QUIETUDE {
-            $end_quietude = now + QUIETUDE_DUR;
-            $next_blink   = now + BLINK_FREQ;
-            $blink_to     = HIGH;
+    method stop {
+        with $!blinky-blinky {
+            $!blinky-blinky.close;
+            $.light.write(LOW);
         }
-
-        elsif $old_state == QUIETUDE && $signal_state == ON_AIR {
-            $signal_state = QUIETUDE;
-        }
-
-        elsif $old_state == QUIETUDE && $signal_state == OFF_AIR {
-            $end_quietude = $next_blink = 0;
-            $quiet_light.write(LOW);
-        }
-
-        send_state_update(:$dry-run);
-
-    }
-}
-
-sub read_state(:$button, :$count! is rw, :$state! is rw) {
-    my $now_state = $button.read == HIGH;
-    if ($state == $now_state) {
-        $count++;
-    }
-    else {
-        $state = $now_state;
-        $count = 0;
     }
 }
 
@@ -148,76 +130,34 @@ sub MAIN(:$dry-run) {
 
     my LightPanel   $light         .= new(:$dry-run);
     my ControlPanel $control       .= new;
-    my Blinker      $quiet-blinker .= new($light.quiet-light);
+    my Blinker      $quiet-blinker .= new(light => $control.quiet-light);
+    my $quietude-event;
 
     react {
-        whenever $control.on-air-events {
-            when True  {
+        whenever $control.on-air-events -> $on-air {
+            when $on-air {
                 $light.go-on-air;
             }
-            when False {
+            default {
                 $quiet-blinker.stop;
                 $light.go-off-air;
             }
         }
 
-        whenever $control.quiet-events {
-            when True  {
+        whenever $control.quiet-events -> $quiet {
+            when $quiet {
                 if $control.is-on-air {
                     $quiet-blinker.start;
-                    my $at = Supply.interval(QUIETUDE_DURATION);
-                    whenever $at {
-                        $at.done;
-                        $light.end-quietude;
-                        $quiet-blinker.stop;
-                    }
+                    my $expected-event = $quietude-event = rand;
+                    Promise.at(now + QUIETUDE_DURATION).then({
+                        if ($quietude-event == $expected-event) {
+                            $light.end-quietude;
+                            $quiet-blinker.stop;
+                        }
+                    });
                     $light.go-quiet;
                 }
             }
         }
-
-        whenever $quiet-blinker.toggle-events {
-            $quiet-blinker.toggle;
-        }
-
-
-    }
-
-    update_signal_state(:force, :$dry-run);
-    loop {
-        read_state(
-            button => $on_air_button,
-            count  => $on_air_count,
-            state  => $on_air_state,
-        );
-
-        read_state(
-            button => $quiet_button,
-            count  => $quiet_count,
-            state  => $quiet_state,
-        );
-
-        if $end_quietude && now > $end_quietude {
-            $quiet_state = $end_quietude = 0;
-            $quiet_count = 2;
-        }
-
-        update_signal_state(:$dry-run);
-
-        if $signal_state == QUIETUDE {
-            if now >= $next_blink {
-                $quiet_light.write($blink_to);
-                $next_blink = now + BLINK_FREQ;
-                $blink_to   = $blink_to == LOW ?? HIGH !! LOW;
-            }
-
-            if now >= $end_quietude {
-                $quiet_light.write(LOW);
-                $next_blink = $end_quietude = 0;
-                $signal_state = ON_AIR;
-            }
-        }
-
-        sleep 0.1;
     }
 }
