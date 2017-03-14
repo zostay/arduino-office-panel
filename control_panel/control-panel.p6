@@ -117,12 +117,18 @@ class Blinker {
     has Tap $.blinky-blinky;
 
     method start {
+        with $!blinky-blinky {
+            $!blinky-blinky.close;
+            $!blinky-blinky = Nil;
+        }
+
         $!blinky-blinky = Supply.interval(0.5).tap({ $.light.toggle });
     }
 
     method stop {
         with $!blinky-blinky {
             $!blinky-blinky.close;
+            $!blinky-blinky = Nil;
             $.light.write(LOW);
         }
     }
