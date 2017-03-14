@@ -1,5 +1,7 @@
 #include "piles.h"
 
+#define BRIGHTNESS 20
+
 PileGrid::PileGrid() {
     pile_colors[0] = mk_color(0, 0, 0);
     pile_colors[1] = mk_color(0, 0, 255);
@@ -12,7 +14,7 @@ PileGrid::PileGrid() {
         }
     }
 
-    set_brightness(20);
+    set_brightness(BRIGHTNESS);
 }
 
 void PileGrid::loop() {

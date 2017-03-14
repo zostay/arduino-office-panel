@@ -41,8 +41,11 @@ class Pin {
 enum SignalState ( OffAir => 0, OnAir => 1, Quietude => 2 );
 
 class LightPanel {
+    has Str $.panel-ip is required;
     has Bool $.dry-run = False;
     has SignalState $.signal-state = OffAir;
+
+    has IO::Socket::Async $!sock .= udp;
 
     method is-on-air { $.signal-state != OffAir }
     method is-quiet  { $.signal-state == Quietude }
@@ -77,7 +80,7 @@ class LightPanel {
 
     method send-state-update() {
         return self.dry-run-state-update() if $.dry-run;
-        ...
+        $!sock.write-to($!panel-ip, 10101, Blob.new([ $!signal-state.Int ]));
     }
 
     method dry-run-state-update() {
@@ -125,10 +128,10 @@ class Blinker {
     }
 }
 
-sub MAIN(:$dry-run) {
+sub MAIN(:$dry-run = False, :$panel-ip!) {
     wiringPiSetup();
 
-    my LightPanel   $light         .= new(:$dry-run);
+    my LightPanel   $light         .= new(:$dry-run, :$panel-ip);
     my ControlPanel $control       .= new;
     my Blinker      $quiet-blinker .= new(light => $control.quiet-light);
     my $quietude-event;

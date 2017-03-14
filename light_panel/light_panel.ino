@@ -36,25 +36,25 @@ void loop() {
         //digitalWrite(PIN_EMERGENCY_BLINK, LOW);
     }
     else {
-        if (mode == EMERGENCY_GRID) {
+        //if (mode == EMERGENCY_GRID) {
             //if (emergency_cycles-- <= 0) {
                 //digitalWrite(PIN_EMERGENCY_BLINK, LOW);
                 mode = ON_AIR_GRID;
             //}
-        }
-        else {
+        //}
+        //else {
             //emergency_cycles = 0;
 
             mode = ON_AIR_GRID;
 
-            if (mode == ON_AIR_GRID) {
+            //if (mode == ON_AIR_GRID) {
                 if (emergency == HIGH) {
                     mode = EMERGENCY_GRID;
                     //emergency_cycles = EMERGENCY_DURATION;
                     //digitalWrite(PIN_EMERGENCY_BLINK, HIGH);
                 }
-            }
-        }
+            //}
+        //}
     }
 
     if (last_mode != mode) {
