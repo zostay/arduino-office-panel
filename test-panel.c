@@ -199,20 +199,6 @@ void color_tent() {
 int piles_counter = 0;
 void piles() {
     piles_grid[rand()%8][rand()%8]++;
-    //piles_grid[0][0]++; //boring
-    //if (++piles_counter % 4) {
-    //    piles_grid[3][3]++;
-    //}
-    //else if (piles_counter % 4 == 1) {
-    //    piles_grid[3][4]++;
-    //}
-    //else if (piles_counter % 4 == 2) {
-    //    piles_grid[4][3]++;
-    //}
-    //else {
-    //    piles_grid[4][4]++;
-    //}
-    // printf("piles_grid[0][0] = %d\n", piles_grid[0][0]);
 
     for (int gy = 0; gy < 8; ++gy) {
         for (int gx = 0; gx < 8; ++gx) {
@@ -236,10 +222,6 @@ void piles() {
             else {
                 printf("  ");
             }
-
-            // unsigned char r, g, b;
-            // al_unmap_rgb(pile_colors[here % 4], &r, &g, &b);
-            // printf("(%d, %d): [%d] %3d, %3d, %3d\n", gx, gy, here % 4, r, g, b);
         }
         printf("\n");
     }
@@ -400,7 +382,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    display = al_create_display(1280, 1280);
+    display = al_create_display(640, 640);
     if(!display) {
         fprintf(stderr, "failed to create display!\n");
         return -1;
@@ -455,41 +437,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
-// #include <stdio.h>
-// #include <SDL2/SDL.h>
-// 
-// int main(int argc, char **argv) {
-//     if (SDL_Init(SDL_INIT_VIDEO) != 0){
-//         printf("SDL_Init Error: %s\n", SDL_GetError());
-// 		return 1;
-// 	}
-// 
-//     SDL_Window *win = SDL_CreateWindow("Hello World!", 100, 100, 640, 640, SDL_WINDOW_SHOWN);
-//     if (win == NULL){
-//         printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
-//         SDL_Quit();
-//         return 1;
-//     }
-// 
-//     SDL_Renderer *ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-//     if (ren == NULL){
-//         SDL_DestroyWindow(win);
-//         printf("SDL_CreateRenderer Error: %s\n", SDL_GetError());
-//         SDL_Quit();
-//         return 1;
-//     }
-// 
-//     for (int i = 0; i < 3; ++i){
-//         SDL_RenderClear(ren);
-//         //SDL_RenderCopy(ren, tex, NULL, NULL);
-//         SDL_RenderPresent(ren);
-//         SDL_Delay(1000);
-//     }
-// 
-//     SDL_DestroyRenderer(ren);
-//     SDL_DestroyWindow(win);
-// 
-// 	SDL_Quit();
-// 	return 0;
-// }
