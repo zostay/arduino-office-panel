@@ -1,10 +1,8 @@
-#include <unistd.h>
-
 #include "on_air.h"
 
 #define BRIGHTNESS 255
 
-#define delay(ms) sleep(ms)
+#define delay(ms)
 
 unsigned char on_air_program[] = {
     0x00, 0x00, 0x84,

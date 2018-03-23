@@ -1,10 +1,9 @@
 #include <cstdlib>
-#include <unistd.h>
 #include "piles.h"
 
 #define BRIGHTNESS 20
 
-#define delay(ms) sleep(ms)
+#define delay(ms)
 
 PileGrid::PileGrid(Panel *panel) : Grid(panel) {
     piles_counter = 0;
