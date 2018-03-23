@@ -8,20 +8,21 @@
 
 class OnAirGrid : public Grid {
     private:
-        uint16_t color_red;
-        uint16_t color_blue;
-        uint16_t color_black;
+        PanelColor *color_red;
+        PanelColor *color_blue;
+        PanelColor *color_black;
 
-        char prev_on_air_mode = 0;
-        char on_air_mode = 0;
-        int on_air_ptr = 0;
-        int underclock = 0;
-        int urgency = 50;
+        char prev_on_air_mode;
+        char on_air_mode;
+        int on_air_ptr;
+        int underclock;
+        int urgency;
 
-        char *program;
+        unsigned char *program;
 
     public:
-        OnAirGrid(int program_selector);
+        OnAirGrid(Panel *panel, int program_selector);
+        ~OnAirGrid();
 
         virtual void loop();
 

@@ -1,4 +1,5 @@
 #include "grid.h"
+#include "arduino-grid.h"
 #include "piles.h"
 #include "on_air.h"
 
@@ -13,6 +14,7 @@
 #define EMERGENCY_DURATION  500
 
 Grid *current;
+Panel *panel;
 
 void setup() {
     Serial.begin(115200);
@@ -20,8 +22,10 @@ void setup() {
     pinMode(PIN_GRID, OUTPUT);
     pinMode(PIN_ON_AIR, INPUT);
     pinMode(PIN_QUIET, INPUT);
+
+    panel = new ArduinoPanel();
     
-    current = new PileGrid();
+    current = new PileGrid(panel);
 }
 
 int mode = PILE_GRID, last_mode = PILE_GRID;
@@ -63,17 +67,18 @@ void loop() {
 
         switch (mode) {
             case PILE_GRID:
-                current = new PileGrid();
+                current = new PileGrid(panel);
                 break;
             case ON_AIR_GRID:
-                current = new OnAirGrid(ON_AIR_PROGRAM);
+                current = new OnAirGrid(panel, ON_AIR_PROGRAM);
                 break;
             case EMERGENCY_GRID:
-                current = new OnAirGrid(EMERGENCY_PROGRAM);
+                current = new OnAirGrid(panel, EMERGENCY_PROGRAM);
                 break;
         }
     }
 
+    current->start_loop();
     current->loop();
     current->finish_loop();
 

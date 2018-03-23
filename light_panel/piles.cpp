@@ -1,12 +1,18 @@
+#include <cstdlib>
+#include <unistd.h>
 #include "piles.h"
 
 #define BRIGHTNESS 20
 
-PileGrid::PileGrid() {
-    pile_colors[0] = mk_color(0, 0, 0);
-    pile_colors[1] = mk_color(0, 0, 255);
-    pile_colors[2] = mk_color(255, 255, 0);
-    pile_colors[3] = mk_color(255, 0, 0);
+#define delay(ms) sleep(ms)
+
+PileGrid::PileGrid(Panel *panel) : Grid(panel) {
+    piles_counter = 0;
+
+    pile_colors[0] = mk_color_rgb(0, 0, 0);
+    pile_colors[1] = mk_color_rgb(0, 0, 255);
+    pile_colors[2] = mk_color_rgb(255, 255, 0);
+    pile_colors[3] = mk_color_rgb(255, 0, 0);
 
     for (int gy = 0; gy < 8; ++gy) {
         for (int gx = 0; gx < 8; ++gx) {
@@ -15,6 +21,12 @@ PileGrid::PileGrid() {
     }
 
     set_brightness(BRIGHTNESS);
+}
+
+PileGrid::~PileGrid() {
+    for (int i = 0; i < 4; ++i) {
+        delete pile_colors[i];
+    }
 }
 
 void PileGrid::loop() {

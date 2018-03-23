@@ -5,13 +5,14 @@
 
 class PileGrid : public Grid {
     private:
-        uint16_t pile_colors[4];
+        PanelColor *pile_colors[4];
         int piles_grid[8][8];
 
-        int piles_counter = 0;
+        int piles_counter;
 
     public:
-        PileGrid();
+        PileGrid(Panel *panel);
+        ~PileGrid();
 
         virtual void loop();
 };

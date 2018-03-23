@@ -1,6 +1,10 @@
+#include <unistd.h>
+
 #include "on_air.h"
 
 #define BRIGHTNESS 255
+
+#define delay(ms) sleep(ms)
 
 unsigned char on_air_program[] = {
     0x00, 0x00, 0x84,
@@ -110,10 +114,16 @@ unsigned char emergency_program[] = {
     0x00, 0x00, 0x00,
 };
 
-OnAirGrid::OnAirGrid(int program_selector) {
-    color_red   = mk_color(255, 0, 0);
-    color_blue  = mk_color(0, 0, 255);
-    color_black = mk_color(0, 0, 0);
+OnAirGrid::OnAirGrid(Panel *panel, int program_selector) : Grid(panel) {
+    prev_on_air_mode = 0;
+    on_air_mode = 0;
+    on_air_ptr = 0;
+    underclock = 0;
+    urgency = 50;
+
+    color_red   = mk_color_rgb(255, 0, 0);
+    color_blue  = mk_color_rgb(0, 0, 255);
+    color_black = mk_color_rgb(0, 0, 0);
 
     switch (program_selector) {
 
@@ -132,6 +142,12 @@ OnAirGrid::OnAirGrid(int program_selector) {
     }
 
     set_brightness(BRIGHTNESS);
+}
+
+OnAirGrid::~OnAirGrid() {
+    delete color_red;
+    delete color_blue;
+    delete color_black;
 }
 
 void OnAirGrid::loop() {

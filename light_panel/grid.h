@@ -1,22 +1,36 @@
 #ifndef GRID_H
 #define GRID_H
 
-#include <Adafruit_NeoMatrix.h>
+#include <cstdint>
+
+class PanelColor { };
+
+class Panel {
+    public:
+        virtual void set_brightness(int b) = 0;
+
+        virtual PanelColor *mk_color_rgb(uint8_t r, uint8_t g, uint8_t b) = 0;
+        virtual void set_color(int gx, int gy, PanelColor *color) = 0;
+
+        virtual void start_loop() = 0;
+        virtual void finish_loop() = 0;
+};
 
 class Grid {
     private:
-        Adafruit_NeoMatrix *panel;
+        Panel *panel;
 
     public:
-        Grid();
-        ~Grid();
+        Grid(Panel *panel);
+        virtual ~Grid();
 
-        void set_brightness(int b);
+        void set_brightness(int b) { panel->set_brightness(b); };
 
-        uint16_t mk_color(uint8_t r, uint8_t g, uint8_t b);
-        void set_color(int gx, int gy, uint16_t color);
+        PanelColor *mk_color_rgb(uint8_t r, uint8_t g, uint8_t b) { return panel->mk_color_rgb(r, g, b); }
+        void set_color(int gx, int gy, PanelColor *color) { panel->set_color(gx, gy, color); }
 
-        void finish_loop();
+        void start_loop() { panel->start_loop(); }
+        void finish_loop() { panel->finish_loop(); }
 
         virtual void loop() = 0;
 };
