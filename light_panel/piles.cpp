@@ -28,7 +28,9 @@ PileGrid::~PileGrid() {
     }
 }
 
-void PileGrid::loop() {
+void PileGrid::loop(long tick) {
+    if (tick % 2 != 0) return;
+
     piles_grid[rand()%8][rand()%8]++;
     //piles_grid[0][0]++; //boring
     //if (++piles_counter % 4) {
@@ -83,6 +85,4 @@ void PileGrid::loop() {
             set_color(gx, gy, pile_colors[*here % 4]);
         }
     }
-
-    delay(100);
 }

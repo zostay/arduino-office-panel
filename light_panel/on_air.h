@@ -15,7 +15,6 @@ class OnAirGrid : public Grid {
         char prev_on_air_mode;
         char on_air_mode;
         int on_air_ptr;
-        int underclock;
         int urgency;
 
         unsigned char *program;
@@ -24,7 +23,7 @@ class OnAirGrid : public Grid {
         OnAirGrid(Panel *panel, int program_selector);
         ~OnAirGrid();
 
-        virtual void loop();
+        virtual void loop(long tick);
 
 };
 

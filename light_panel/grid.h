@@ -32,7 +32,7 @@ class Grid {
         void start_loop() { panel->start_loop(); }
         void finish_loop() { panel->finish_loop(); }
 
-        virtual void loop() = 0;
+        virtual void loop(long tick) = 0;
 };
 
 #endif //GRID_H

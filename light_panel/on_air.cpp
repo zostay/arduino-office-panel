@@ -116,7 +116,6 @@ OnAirGrid::OnAirGrid(Panel *panel, int program_selector) : Grid(panel) {
     prev_on_air_mode = 0;
     on_air_mode = 0;
     on_air_ptr = 0;
-    underclock = 0;
     urgency = 50;
 
     color_red   = mk_color_rgb(255, 0, 0);
@@ -148,13 +147,13 @@ OnAirGrid::~OnAirGrid() {
     delete color_black;
 }
 
-void OnAirGrid::loop() {
+void OnAirGrid::loop(long tick) {
     if (on_air_mode & 0x80)
-        urgency = 50;
+        urgency = 1;
     else
-        urgency = 500;
-    
-    underclock = urgency;
+        urgency = 10;
+
+    if (tick % urgency != 0) return;
 
     if (program[on_air_ptr] == 0
             && program[on_air_ptr+1] == 0
@@ -237,6 +236,4 @@ void OnAirGrid::loop() {
             }
         }
     }
-
-    delay(underclock);
 }

@@ -14,7 +14,7 @@ class PileGrid : public Grid {
         PileGrid(Panel *panel);
         ~PileGrid();
 
-        virtual void loop();
+        virtual void loop(long tick);
 };
 
 #endif //PILES_H

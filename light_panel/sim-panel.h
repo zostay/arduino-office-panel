@@ -20,6 +20,7 @@ class AllegroColor : public PanelColor {
 
 class SimPanel : public Panel {
     private:
+        int brightness;
         ALLEGRO_COLOR grid[8][8];
 
     public:

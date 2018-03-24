@@ -12,6 +12,8 @@
 
 ALLEGRO_COLOR grid[8][8];
 
+#define DEFAULT_TICK_HZ 20
+
 int main(int argc, char **argv) {
     ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 
@@ -21,7 +23,7 @@ int main(int argc, char **argv) {
     }
 
     std::unique_ptr<ALLEGRO_TIMER, void(*)(ALLEGRO_TIMER*)> timer(
-        al_create_timer(0.06),
+        al_create_timer(1.0 / DEFAULT_TICK_HZ),
         al_destroy_timer
     );
     if (!timer) {
@@ -63,7 +65,8 @@ int main(int argc, char **argv) {
 
     al_start_timer(timer.get());
 
-    while(1) {
+    bool done = false;
+    while(!done) {
         ALLEGRO_EVENT ev;
         al_wait_for_event(event_queue, &ev);
 
@@ -73,7 +76,7 @@ int main(int argc, char **argv) {
         else if (ev.type == ALLEGRO_EVENT_TIMER) {
             // tick
             current->start_loop();
-            current->loop();
+            current->loop(ev.timer.count);
             current->finish_loop();
         }
         else if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
@@ -89,6 +92,9 @@ int main(int argc, char **argv) {
                 case ALLEGRO_KEY_E:
                     delete current;
                     current = new OnAirGrid(panel, EMERGENCY_PROGRAM);
+                    break;
+                case ALLEGRO_KEY_Q:
+                    done = true;
                     break;
             }
         }
