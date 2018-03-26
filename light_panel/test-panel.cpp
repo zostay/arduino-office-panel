@@ -5,6 +5,7 @@
 #include <allegro5/allegro_primitives.h>
 #include <memory>
 
+#include "udp-listener.h"
 #include "grid.h"
 #include "sim-panel.h"
 #include "piles.h"
@@ -12,7 +13,8 @@
 
 ALLEGRO_COLOR grid[8][8];
 
-#define DEFAULT_TICK_HZ 20
+const int TICK_HZ  = 20;
+const int UDP_PORT = 10101;
 
 int main(int argc, char **argv) {
     ALLEGRO_EVENT_QUEUE *event_queue = NULL;
@@ -23,7 +25,7 @@ int main(int argc, char **argv) {
     }
 
     std::unique_ptr<ALLEGRO_TIMER, void(*)(ALLEGRO_TIMER*)> timer(
-        al_create_timer(1.0 / DEFAULT_TICK_HZ),
+        al_create_timer(1.0 / TICK_HZ),
         al_destroy_timer
     );
     if (!timer) {
@@ -60,8 +62,18 @@ int main(int argc, char **argv) {
     al_register_event_source(event_queue, al_get_timer_event_source(timer.get()));
     al_register_event_source(event_queue, al_get_keyboard_event_source());
 
-    SimPanel *panel = new SimPanel();
-    Grid *current = new PileGrid(panel);
+    SimPanel panel;
+    std::unique_ptr<Grid> current = std::make_unique<PileGrid>(&panel);
+    UdpListener udp(UDP_PORT);
+
+    try {
+        udp.listen();
+        std::cerr << "Listening for UDP packets on port " << UDP_PORT << " ... " << std::endl;
+    }
+    catch (UdpListenerException e) {
+        std::cerr << "Failed to listen on port " << UDP_PORT << ": " << e << std::endl;
+        return 1;
+    }
 
     al_start_timer(timer.get());
 
@@ -74,6 +86,17 @@ int main(int argc, char **argv) {
             break;
         }
         else if (ev.type == ALLEGRO_EVENT_TIMER) {
+            try {
+                if (udp.message_ready()) {
+                    std::string message(udp.receive_message());
+                    std::cerr << "Received UDP message: " << message << std::endl;
+                }
+            }
+            catch  (UdpListenerException e) {
+                std::cerr << "Unable to receive UDP message: " << e << std::endl;
+                return 1;
+            }
+
             // tick
             current->start_loop();
             current->loop(ev.timer.count);
@@ -81,27 +104,25 @@ int main(int argc, char **argv) {
         }
         else if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
             switch (ev.keyboard.keycode) {
+
                 case ALLEGRO_KEY_P:
-                    delete current;
-                    current = new PileGrid(panel);
+                    current = std::make_unique<PileGrid>(&panel);
                     break;
+                    
                 case ALLEGRO_KEY_O:
-                    delete current;
-                    current = new OnAirGrid(panel, ON_AIR_PROGRAM);
+                    current = std::make_unique<OnAirGrid>(&panel, ON_AIR_PROGRAM);
                     break;
+
                 case ALLEGRO_KEY_E:
-                    delete current;
-                    current = new OnAirGrid(panel, EMERGENCY_PROGRAM);
+                    current = std::make_unique<OnAirGrid>(&panel, EMERGENCY_PROGRAM);
                     break;
+
                 case ALLEGRO_KEY_Q:
                     done = true;
                     break;
             }
         }
     }
-
-    delete current;
-    delete panel;
 
     return 0;
 }
