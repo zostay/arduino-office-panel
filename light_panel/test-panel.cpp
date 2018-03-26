@@ -89,7 +89,18 @@ int main(int argc, char **argv) {
             try {
                 if (udp.message_ready()) {
                     std::string message(udp.receive_message());
-                    std::cerr << "Received UDP message: " << message << std::endl;
+                    if (message == std::string("\x00", 1)) {
+                        std::cerr << "PileGrid" << std::endl;
+                        current = std::make_unique<PileGrid>(&panel);
+                    }
+                    else if (message == "\x01") {
+                        std::cerr << "OnAirGrid(ON_AIR_PROGRAM)" << std::endl;
+                        current = std::make_unique<OnAirGrid>(&panel, ON_AIR_PROGRAM);
+                    }
+                    else if (message == "\x02") {
+                        std::cerr << "OnAirGrid(EMERGENCY_PROGRAM)" << std::endl;
+                        current = std::make_unique<OnAirGrid>(&panel, EMERGENCY_PROGRAM);
+                    }
                 }
             }
             catch  (UdpListenerException e) {

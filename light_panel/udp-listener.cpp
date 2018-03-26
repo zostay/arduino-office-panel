@@ -2,6 +2,7 @@
 
 #include <sys/fcntl.h>
 #include <unistd.h>
+#include <iostream>
 
 std::ostream& operator<< (std::ostream& os, UdpListenerException& x) {
     return os << x.get_message();
@@ -42,13 +43,13 @@ bool UdpListener::message_ready() {
     if (!listening_socket)
         throw UdpListenerException("socket is not open", false);
 
-    timeval zero_wait = { .tv_sec = 0, .tv_usec = 0 };
+    timeval zero_wait = { .tv_sec = 0, .tv_usec = 1 };
     fd_set read_sockets;
     FD_ZERO(&read_sockets);
     FD_SET(listening_socket, &read_sockets);
     
-    int max_fd = listening_socket + 1;
-    int ready = select(max_fd, &read_sockets, 0, 0, &zero_wait);
+    int max_fds = listening_socket + 1;
+    int ready = select(max_fds, &read_sockets, 0, 0, &zero_wait);
     if (ready == -1) 
         throw UdpListenerException("failed while waiting for message", true);
 
