@@ -18,9 +18,13 @@ class OnAirGrid : public Grid {
         int urgency;
 
         unsigned char *program;
+        int program_length;
+
+        void init(const unsigned char *program, int length);
 
     public:
         OnAirGrid(Panel *panel, int program_selector);
+        OnAirGrid(Panel *panel, const unsigned char *program, int length);
         ~OnAirGrid();
 
         virtual void loop(long tick);

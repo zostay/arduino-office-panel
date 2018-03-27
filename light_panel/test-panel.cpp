@@ -101,8 +101,13 @@ int main(int argc, char **argv) {
                         std::cerr << "OnAirGrid(EMERGENCY_PROGRAM)" << std::endl;
                         current = std::make_unique<OnAirGrid>(&panel, EMERGENCY_PROGRAM);
                     }
+                    else if (message.find("\x03") == 0) {
+                        std::cerr << "OnAirGrid(CUSTOM)" << std::endl;
+                        current = std::make_unique<OnAirGrid>(&panel, reinterpret_cast<const unsigned char*>(message.data() + 1), message.length() - 1);
+                    }
                 }
             }
+
             catch  (UdpListenerException e) {
                 std::cerr << "Unable to receive UDP message: " << e << std::endl;
                 return 1;
@@ -116,21 +121,22 @@ int main(int argc, char **argv) {
         else if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
             switch (ev.keyboard.keycode) {
 
-                case ALLEGRO_KEY_P:
-                    current = std::make_unique<PileGrid>(&panel);
-                    break;
-                    
-                case ALLEGRO_KEY_O:
-                    current = std::make_unique<OnAirGrid>(&panel, ON_AIR_PROGRAM);
-                    break;
+            case ALLEGRO_KEY_P:
+                current = std::make_unique<PileGrid>(&panel);
+                break;
+                
+            case ALLEGRO_KEY_O:
+                current = std::make_unique<OnAirGrid>(&panel, ON_AIR_PROGRAM);
+                break;
 
-                case ALLEGRO_KEY_E:
-                    current = std::make_unique<OnAirGrid>(&panel, EMERGENCY_PROGRAM);
-                    break;
+            case ALLEGRO_KEY_E:
+                current = std::make_unique<OnAirGrid>(&panel, EMERGENCY_PROGRAM);
+                break;
 
-                case ALLEGRO_KEY_Q:
-                    done = true;
-                    break;
+            case ALLEGRO_KEY_Q:
+                done = true;
+                break;
+
             }
         }
     }
