@@ -1,4 +1,5 @@
 #include <math.h>
+#include <iomanip>
 #include <iostream>
 #include <stdlib.h>
 #include <allegro5/allegro.h>
@@ -10,6 +11,12 @@
 #include "sim-panel.h"
 #include "piles.h"
 #include "on_air.h"
+#include "remote-grid.h"
+
+// C++ sucks butt on formatting... there's a better way to do this using a tiny
+// little class and custom operator... BUT OMGOSH ALREADY
+#define hex(c) std::setw(2) << std::setfill('0') << std::hex << (int)(char)c
+#define dec(c) std::dec << (int)(char)c
 
 ALLEGRO_COLOR grid[8][8];
 
@@ -104,6 +111,63 @@ int main(int argc, char **argv) {
                     else if (message.find("\x03") == 0) {
                         std::cerr << "OnAirGrid(CUSTOM)" << std::endl;
                         current = std::make_unique<OnAirGrid>(&panel, reinterpret_cast<const unsigned char*>(message.data() + 1), message.length() - 1);
+                    }
+                    else if (message.find("\x11") == 0 && message.length() == 4) {
+                        char r = message.at(1);
+                        char g = message.at(2);
+                        char b = message.at(3);
+
+                        std::cerr << "RemoteGrid.clear(" 
+                                          << hex(r)
+                                  << ", " << hex(g)
+                                  << ", " << hex(b)
+                                  << ")"  << std::endl;
+                        if (typeid(current) != typeid(RemoteGrid)) {
+                            current = std::make_unique<RemoteGrid>(&panel);
+                        }
+
+                        dynamic_cast<RemoteGrid*>(current.get())->remote_clear_panel(r, g, b);
+                    }
+                    else if (message.find("\x12") == 0 && message.length() == 6) {
+                        char x = message.at(1);
+                        char y = message.at(2);
+                        char r = message.at(3);
+                        char g = message.at(4);
+                        char b = message.at(5);
+
+                        std::cerr << "RemoteGrid.set(" 
+                                          << dec(x)
+                                  << ", " << dec(y)
+                                  << ", " << hex(r)
+                                  << ", " << hex(g)
+                                  << ", " << hex(b)
+                                  << ")"  << std::endl;
+
+                        if (typeid(current) != typeid(RemoteGrid)) {
+                            current = std::make_unique<RemoteGrid>(&panel);
+                        }
+
+                        dynamic_cast<RemoteGrid*>(current.get())->remote_set_color(x, y, r, g, b);
+                    }
+                    else if (message.find("\x13") == 0 && message.length() == 193) {
+                        std::cerr << "RemoteGrid.bitmap(...)" << std::endl;
+
+                        if (typeid(current) != typeid(RemoteGrid)) {
+                            current = std::make_unique<RemoteGrid>(&panel);
+                        }
+
+                        dynamic_cast<RemoteGrid*>(current.get())->remote_set_colors(reinterpret_cast<const uint8_t*>(message.data()+1));
+                    }
+                    else if (message.find("\x14") == 0 && message.length() == 2) {
+                        char b = message.at(1);
+
+                        std::cerr << "RemoteGrid.brightness(" << hex(b) << ")" << std::endl;
+
+                        if (typeid(current) != typeid(RemoteGrid)) {
+                            current = std::make_unique<RemoteGrid>(&panel);
+                        }
+
+                        dynamic_cast<RemoteGrid*>(current.get())->remote_set_brightness(b);
                     }
                 }
             }
