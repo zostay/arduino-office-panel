@@ -208,7 +208,11 @@ sub MAIN(
     my LightPanel   $light         .= new(:$dry-run, :$panel-ip);
     my ControlPanel $control       .= new;
     my Blinker      $quiet-blinker .= new(light => $control.quiet-light);
-    my $quietude-event;
+
+    # When we go to quiet/"emergency" state, this promise will be initialized.
+    # If the on air switch is turned off early, we keep this promise to trigger
+    # an early end to the quiet/"emergency" state.
+    my Promise      $early-quiet;
 
     react {
 
@@ -224,8 +228,10 @@ sub MAIN(
             # When the on air switch is flipped off, make sure the quiet blink
             # is off and make sure the light panel is off air.
             when False {
-                $quiet-blinker.stop;
                 $light.go-off-air;
+
+                # Also keep the $early-quiet promise, if present
+                .keep with $early-quiet;
             }
         }
 
@@ -238,17 +244,15 @@ sub MAIN(
                 if $control.is-on-air {
                     $quiet-blinker.start;
 
-                    # This helps us avoid having one quiet mode press crashing a
-                    # later one (though, that's normally only possible when I'm
-                    # playing it and trying to make it act weird).
-                    my $expected-event = $quietude-event = rand;
-
                     # Stop blinking and turn off "emergency" mode in 30 seconds
-                    Promise.at(now + QUIETUDE_DURATION).then({
-                        if ($quietude-event == $expected-event) {
-                            $light.end-quietude;
-                            $quiet-blinker.stop;
-                        }
+                    # or when the on air switch goes off early.
+                    Promise.anyof(
+                        $early-quiet = Promise.new,
+                        Promise.in(QUIETUDE_DURATION),
+                    ).then({
+                        $early-quiet = Nil;
+                        $light.end-quietude;
+                        $quiet-blinker.stop;
                     });
 
                     # Turn the light panel to "emergency" mode
