@@ -56,16 +56,15 @@ bool UdpListener::message_ready() {
     return ready > 0;
 }
 
+char message_buffer[1024];
 std::string UdpListener::receive_message() {
     struct sockaddr_in remote_addr;
     socklen_t remote_addr_len = sizeof(remote_addr);
 
-    auto message_buffer = std::make_unique<char>(65535);
-
     int actual_size = recvfrom(
         listening_socket, 
-        reinterpret_cast<void*>(message_buffer.get()), 
-        sizeof(unsigned char)*65535, 
+        reinterpret_cast<void*>(message_buffer), 
+        sizeof(char)*1024, 
         0,
         reinterpret_cast<sockaddr*>(&remote_addr),
         &remote_addr_len
@@ -74,6 +73,6 @@ std::string UdpListener::receive_message() {
     if (actual_size == -1)
         throw UdpListenerException("failed receiving message", true);
 
-    std::string message(message_buffer.get(), actual_size);
+    std::string message(message_buffer, actual_size);
     return message;
 }
