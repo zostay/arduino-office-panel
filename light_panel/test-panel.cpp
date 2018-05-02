@@ -84,12 +84,14 @@ int main(int argc, char **argv) {
 
     al_start_timer(timer.get());
 
+    bool remote = false;
     bool done = false;
     while(!done) {
         ALLEGRO_EVENT ev;
         al_wait_for_event(event_queue, &ev);
 
         if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+            done = true;
             break;
         }
         else if (ev.type == ALLEGRO_EVENT_TIMER) {
@@ -99,18 +101,22 @@ int main(int argc, char **argv) {
                     if (message == std::string("\x00", 1)) {
                         std::cerr << "PileGrid" << std::endl;
                         current = std::make_unique<PileGrid>(&panel);
+                        remote = false;
                     }
                     else if (message == "\x01") {
                         std::cerr << "OnAirGrid(ON_AIR_PROGRAM)" << std::endl;
                         current = std::make_unique<OnAirGrid>(&panel, ON_AIR_PROGRAM);
+                        remote = false;
                     }
                     else if (message == "\x02") {
                         std::cerr << "OnAirGrid(EMERGENCY_PROGRAM)" << std::endl;
                         current = std::make_unique<OnAirGrid>(&panel, EMERGENCY_PROGRAM);
+                        remote = false;
                     }
                     else if (message.find("\x03") == 0) {
                         std::cerr << "OnAirGrid(CUSTOM)" << std::endl;
                         current = std::make_unique<OnAirGrid>(&panel, reinterpret_cast<const unsigned char*>(message.data() + 1), message.length() - 1);
+                        remote = false;
                     }
                     else if (message.find("\x11") == 0 && message.length() == 4) {
                         char r = message.at(1);
@@ -122,8 +128,11 @@ int main(int argc, char **argv) {
                                   << ", " << hex(g)
                                   << ", " << hex(b)
                                   << ")"  << std::endl;
-                        if (typeid(current) != typeid(RemoteGrid)) {
+
+                        if (!remote) {
+                            std::cerr << "Start RemoteGrid" << std::endl;
                             current = std::make_unique<RemoteGrid>(&panel);
+                            remote = true;
                         }
 
                         dynamic_cast<RemoteGrid*>(current.get())->remote_clear_panel(r, g, b);
@@ -143,8 +152,10 @@ int main(int argc, char **argv) {
                                   << ", " << hex(b)
                                   << ")"  << std::endl;
 
-                        if (typeid(current) != typeid(RemoteGrid)) {
+                        if (!remote) {
+                            std::cerr << "Start RemoteGrid" << std::endl;
                             current = std::make_unique<RemoteGrid>(&panel);
+                            remote = true;
                         }
 
                         dynamic_cast<RemoteGrid*>(current.get())->remote_set_color(x, y, r, g, b);
@@ -152,8 +163,10 @@ int main(int argc, char **argv) {
                     else if (message.find("\x13") == 0 && message.length() == 193) {
                         std::cerr << "RemoteGrid.bitmap(...)" << std::endl;
 
-                        if (typeid(current) != typeid(RemoteGrid)) {
+                        if (!remote) {
+                            std::cerr << "Start RemoteGrid" << std::endl;
                             current = std::make_unique<RemoteGrid>(&panel);
+                            remote = true;
                         }
 
                         dynamic_cast<RemoteGrid*>(current.get())->remote_set_colors(reinterpret_cast<const uint8_t*>(message.data()+1));
@@ -163,8 +176,10 @@ int main(int argc, char **argv) {
 
                         std::cerr << "RemoteGrid.brightness(" << hex(b) << ")" << std::endl;
 
-                        if (typeid(current) != typeid(RemoteGrid)) {
+                        if (!remote) {
+                            std::cerr << "Start RemoteGrid" << std::endl;
                             current = std::make_unique<RemoteGrid>(&panel);
+                            remote = true;
                         }
 
                         dynamic_cast<RemoteGrid*>(current.get())->remote_set_brightness(b);
